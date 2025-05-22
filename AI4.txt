@@ -1,34 +1,30 @@
 import pandas as pd
-import requests
-from bs4 import BeautifulSoup
 import smtplib
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import random
 
 def analyze_audience_data(file_path):
     df = pd.read_csv(file_path)
     return df
 
-def analyze_competitor_seo(url):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    title_tag = soup.find('title').text if soup.find('title') else "No Title"
-    meta_description = soup.find('meta', attrs={'name': 'description'})
-    meta_description = meta_description['content'] if meta_description else "No Meta Description"
-    print(f"\nCompetitor SEO Analysis for {url}:")
-    print(f"Title Tag: {title_tag}")
-    print(f"Meta Description: {meta_description}")
-    return title_tag, meta_description
+def recommend_products(user_product, product_list):
+    other_products = [p for p in product_list if p != user_product]
+    recommended_products = random.sample(
+        other_products, min(3, len(other_products))
+    )
+    return recommended_products
 
-def generate_email_content(customer_name, product_list, brand_name):
-    recommended_product = random.choice(product_list)
+def generate_email_content(customer_name, user_product, product_list, brand_name):
+    recommended_products = recommend_products(user_product, product_list)
     email_body = f"""
 Dear {customer_name},
 
-We noticed you've shown interest in our products. Here's a special recommendation just for you:
+We noticed you've shown interest in our {user_product}. Here are some recommendations just for you:
 
-**{recommended_product}**
+Recommended Products:
+- {recommended_products[0]}
+- {recommended_products[1]}
+- {recommended_products[2]}
 
 Shop now and enjoy exclusive discounts!
 
@@ -39,9 +35,9 @@ Best,
 
 def send_personalized_email(subject, body, to_email, from_email, password):
     msg = MIMEText(body)
-    msg["From"] = from_email
-    msg["To"] = to_email
-    msg["Subject"] = subject
+    msg['From'] = from_email
+    msg['To'] = to_email
+    msg['Subject'] = subject
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
@@ -53,15 +49,20 @@ def send_personalized_email(subject, body, to_email, from_email, password):
         print(f"Error sending email: {e}")
 
 if __name__ == "__main__":
-    customer_data = analyze_audience_data(r"C:\Users\bieta\Downloads\Mall_Customers.csv")
-    competitor_url = "<paste_url>"
-    analyze_competitor_seo(competitor_url)
-    customer_name = "name"
+    customer_data = analyze_audience_data(
+        r"C:\Users\bieta\Downloads\Mall_Customers.csv"
+    )
+    customer_name = "Name"
+    user_product = "Product Name"
     product_list = customer_data['product'].dropna().unique().tolist()
-    brand_name = "your_brand"
-    email_body = generate_email_content(customer_name, product_list, brand_name)
+    brand_name = "Brand Name"
+    email_body = generate_email_content(
+        customer_name, user_product, product_list, brand_name
+    )
     subject = f"Hi {customer_name}, Check Out Our New Collection!"
     to_email = "customer@gmail.com"
     from_email = "sender@gmail.com"
-    password = "Your_Password"
-    send_personalized_email(subject, email_body, to_email, from_email, password)
+    password = "your_password"
+    send_personalized_email(
+        subject, email_body, to_email, from_email, password
+    )
