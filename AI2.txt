@@ -1,0 +1,63 @@
+import pandas as pd
+import numpy as np
+from sklearn.cluster import KMeans
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+import nltk
+
+nltk.download('punkt')
+nltk.download('stopwords')
+
+user_data = {
+    'user_id': [1, 2, 3],
+    'name': ['Bob', 'Alice', 'John'],
+    'location': ['New York', 'California', 'Texas'],
+    'recent_interactions': [
+        ['fitness equipment', 'health supplements'],
+        ['yoga mats', 'organic products'],
+        ['fitness tracking', 'gym equipment']
+    ],
+    'email': ['bob@example.com', 'alice@example.com', 'john@example.com']
+}
+df = pd.DataFrame(user_data)
+
+stop_words = set(stopwords.words('english'))
+def tokenize_interests(interests):
+    return [
+        word.lower() for word in word_tokenize(' '.join(interests))
+        if word.isalpha() and word.lower() not in stop_words
+    ]
+
+df['tokenized_interests'] = df['recent_interactions'].apply(tokenize_interests)
+
+unique_tokens = list(
+    set(
+        item for sublist in df['tokenized_interests'] for item in sublist
+    )
+)
+word_vector = np.array([
+    [1 if word in interests else 0 for word in unique_tokens]
+    for interests in df['tokenized_interests']
+])
+df['cluster'] = KMeans(n_clusters=2).fit_predict(word_vector)
+
+def generate_email(user):
+    cluster = user['cluster']
+    name, location = user['name'], user['location']
+    if cluster == 0:
+        return (
+            f"Subject: Hey {name}, Check Out the Latest in Fitness Gear!\n"
+            f"Body: Hi {name},\n\nExplore our new fitness products in {location}!"
+            f"\n\nBest regards,\nYour Fitness Shop"
+        )
+    else:
+        return (
+            f"Subject: Hi {name}, Find the Perfect Yoga Gear for You!\n"
+            f"Body: Hi {name},\n\nCheck out new yoga products in {location}!"
+            f"\n\nStay healthy,\nYour Wellness Store"
+        )
+
+for _, user in df.iterrows():
+    print(f"To: {user['name']} ({user['email']})")
+    print(generate_email(user))
+    print("*" * 50)
