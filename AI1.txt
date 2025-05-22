@@ -1,0 +1,21 @@
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
+
+model = GPT2LMHeadModel.from_pretrained('gpt2')
+tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+tokenizer.pad_token = tokenizer.eos_token
+
+def predict_next_word(prompt):
+    inputs = tokenizer.encode(prompt, return_tensors="pt")
+    outputs = model.generate(
+        inputs,
+        max_length=len(inputs[0]) + 500,
+        num_return_sequences=1,
+        no_repeat_ngram_size=2,
+        temperature=0.7
+    )
+    predicted_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return predicted_text
+
+prompt = "I hope this email finds you"
+predicted_text = predict_next_word(prompt)
+print(f"Prediction: {predicted_text}")
